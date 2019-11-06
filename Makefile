@@ -7,7 +7,7 @@ RAPPORT = rapport
 TARGET_FILES = rapport-modele.pdf # À REMPLACER PAR rapport.pdf
 FILES = $(addprefix $(RAPPORT)/,$(TARGET_FILES))
 CXX = clang++
-CXXFLAGS = --std=c++2a -O3
+CXXFLAGS = --std=c++17 -O3
 
 all: bin doc rapport
 
