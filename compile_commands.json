@@ -1,0 +1,14 @@
+[
+    {
+        "arguments": [
+            "clang++",
+            "-c",
+            "--std=c++2a",
+            "-o",
+            "obj/computePatchOpt.o",
+            "src/computePatchOpt.cpp"
+        ],
+        "directory": "/home/traxys/Documents/Cours/AOD/TP-Patch/template_rendu",
+        "file": "src/computePatchOpt.cpp"
+    }
+]
