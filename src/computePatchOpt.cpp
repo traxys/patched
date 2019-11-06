@@ -267,7 +267,7 @@ void create_patch(std::vector<LinePair>& optimal_path, const char* file_name, Li
 		// Nothing to preset
 	} else if (start.first == -1) {
 		for(int j = 0; j <= start.second; j++) {
-			ostrm << "+ " << j + 1 << std::endl << output->get(j) << std::endl;
+			ostrm << "+ 0" << std::endl << output->get(j) << std::endl;
 		}
 	} else if (start.second == -1) {
 		for(int i = 0; i <= start.first; i++) {
