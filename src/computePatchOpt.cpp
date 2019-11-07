@@ -441,10 +441,10 @@ int main(int argc, char *argv[])
 	//searcher.print_graph();
 	searcher.search();
 	auto optimal_path = searcher.optimal_path();
-	for (auto &p : optimal_path) {
+	/*for (auto &p : optimal_path) {
 		std::cout << "i: " << p.first << " | j: " << p.second
 			<< std::endl;
-	}
+	}*/
 	std::cout << "Valued at " << searcher.optimal_cost() << std::endl;
 	create_patch(optimal_path, argv[3], &input_file, &output_file);
 
