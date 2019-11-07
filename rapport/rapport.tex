@@ -80,26 +80,14 @@
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \section{Compte rendu d'expérimentation (2 points)}
   \subsection{Conditions expérimentaless}
-     {\em Décrire les conditions permettant la reproductibilité des mesures: on demande la description
-      de la machine et la méthode utilisée pour mesurer le temps.
-     }
 
     \subsubsection{Description synthétique de la machine\,:}
-      {\em indiquer ici le  processeur et sa fréquence, la mémoire, le système d'exploitation.
-       Préciser aussi si la machine était monopolisée pour un test, ou notamment si
-       d'autres processus ou utilisateurs étaient en cours d'exécution.
-      }
+	Le CPU de la machine est un AMD Ryzen 2600, avec 16GB de RAM DDR4. Il tourne sur Arch Linux, i3. Utilisation standard du PC avec des logiciels usuels d'ouvert comme un navigateur web.
 
     \subsubsection{Méthode utilisée pour les mesures de temps\,: }
-      {\em préciser ici  comment les mesures de temps ont été effectuées (fonction appelée) et l'unité de temps; en particulier,
-       préciser comment les 5 exécutions pour chaque test ont été faites (par exemple si le même test est fait 5 fois de suite, ou si les tests sont alternés entre
-       les mesures, ou exécutés en concurrence etc).
-      }
+	J'ai utilise le benchTester pour relever les temps de chaque benchmark, user puisque c'est un programme mono-thread et que cela enleve le temps de l'OS. l'un apres l'autre en attendant. J'ai recommence 5 fois.
 
   \subsection{Mesures expérimentales}
-    {\em Compléter le tableau suivant par les temps d'exécution mesurés pour chacun des 6 benchmarks imposés
-              (temps minimum, maximum et moyen sur 5 exécutions)
-    }
 
     \begin{figure}[h]
       \begin{center}
@@ -110,15 +98,15 @@
             & du patch     & min       & max     & moyen \\
           \hline
           \hline
-            benchmark\_00 &      &     &     &     \\
+		  benchmark\_00 &   10419   &  0.01 &  0.03   &  0.02   \\
           \hline
-            benchmark\_01 &      &     &     &     \\
+		  benchmark\_01 &   13222   &  5.00 &  5.99   &  5.27   \\
           \hline
-            benchmark\_02 &      &     &     &     \\
+		  benchmark\_02 &   3633    &  3.00 &  3.40   &  3.09   \\
           \hline
-            benchmark\_03 &      &     &     &     \\
+		  benchmark\_03 &   19121   &  6.56 &  7.15   &  6.73   \\
           \hline
-            benchmark\_04 &      &     &     &     \\
+		  benchmark\_04 &   3726    &  3.13 &  3.32   &  3.22   \\
           \hline
           \hline
         \end{tabular}
@@ -127,23 +115,26 @@
       \end{center}
     \end{figure}
 
+	On voit en annexe un graphe de temps de calcul en fonction de la taille de fichier, avec des fichiers qui different avec environ 30\% de probabilite par ligne
+
 \subsection{Analyse des résultats expérimentaux}
-{\em Donner  une réponse justifiée  à la question\,:
-              les  temps mesurés correspondent ils  à votre analyse théorique (nombre d’opérations et défauts de cache) ?
-}
+On voit avec le graphe en annexe que le temps semble en effet etre entre quadratique et lineaire.
 
 \section{Coût du patch en octet (1 point)}
-  {\em Quelle méthode utiliseriez vous pour résoudre le problème si le coût d’un patch était défini comme
-sa taille en nombre d’octets (i.e. taille du fichier patch).
-On ne demande pas de programme ni d’algorithme, mais juste de préciser le principe de la résolution
-choisie (parmi celles vues en cours) ; on précisera soit les équations de base pour la résolution, soit
-les modifications à apporter à votre programme s’il peut être adapté à cette fonction de coût.
-  }
+Il suffit juste de changer la fonction de cout en disant que cela coute aussi cher de supprimer que d'ajouter, et quasmient deux fois plus cher de faire une subsititution. Le cout est alors approximativement la longeure de la ligne somme avec le nombre de chiffres pour representer le numero de la ligne. Cela change peu le probleme.
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \section{Bonus : Pourrait-on utiliser une technique de blocking ? (1 point)}
-{\em
-Si oui, quel serait asymptotiquement le nombre de défauts de
-cache avec un cache de taille Z chargé par par lignes de taille L ?
-}
+Avec l'algorithme tel que presente non, en effet on risque de ne pas trouver le chemin optimal puisque l'algorithme ne sait que aller dans le coin d'un bloc. Pour faire du blocking ca serait de couper les fichiers en parties de plus en plus petites et essayer de transformer chacune des parties d'entree en chacune des parties d'entrees. Le cout de recoller chaque partie risque de s'averer assez haut
+
+\section*{Annexe}
+
+    \begin{figure}[h]
+      \begin{center}
+		  \includegraphics{rapport/cost.pdf}
+		  \caption{Mesures des temps minimum en fonction de la longeure}
+		  \label{graph-temps}
+      \end{center}
+    \end{figure}
+
 \end{document}
 %% Fin mise au format

@@ -4,7 +4,7 @@ SRC = src
 DOC = doc
 LATEXMK = pdflatex -output-directory $(OBJ)
 RAPPORT = rapport
-TARGET_FILES = rapport-modele.pdf # À REMPLACER PAR rapport.pdf
+TARGET_FILES = rapport.pdf # À REMPLACER PAR rapport.pdf
 FILES = $(addprefix $(RAPPORT)/,$(TARGET_FILES))
 CXX = clang++
 CXXFLAGS = --std=c++17 -O3
