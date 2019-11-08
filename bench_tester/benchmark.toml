@@ -1,0 +1,19 @@
+[benchmark_00]
+source = "benchmarks/benchmark_00/source"
+target = "benchmarks/benchmark_00/target"
+
+[benchmark_01]
+source = "benchmarks/benchmark_01/source"
+target = "benchmarks/benchmark_01/target"
+
+[benchmark_02]
+source = "benchmarks/benchmark_02/source"
+target = "benchmarks/benchmark_02/target"
+
+[benchmark_03]
+source = "benchmarks/benchmark_03/source"
+target = "benchmarks/benchmark_03/target"
+
+[benchmark_04]
+source = "benchmarks/benchmark_04/source"
+target = "benchmarks/benchmark_04/target"

@@ -1,0 +1,312 @@
+% \documentclass[a4paper, 10pt, french]{article}
+\usepackage{header}
+\usepackage{caption}
+\usepackage{enumitem}
+
+\newcounter{annee}
+\setcounter{annee}{2015}
+
+\title{TP Algorithmique et Optimisation Discrète}
+\subtitle{Génération de patch optimal}
+\date{2015 -- 2016}
+\author{Équipe pédagogique AOD}
+
+\begin{document}
+
+
+\maketitle
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%Probleme: * Patch : Transformation d'un fichier  source vers un fichier cible (avec edition à  la sed:
+%        insert_here( char ) , delete_here() , substitute_here(char), skip(int nbcar) )
+%http://people.cs.clemson.edu/~bcdean/dp_practice/dp_8.swf   (en partant de 0 bien sûr et pas de 1)
+%NB : skip(i): ecrit les i caracteres courants sur l'entrée en sortie sans les modifier
+%
+
+En informatique,
+un {\em patch} est une suite  d'instructions de transformation appliquées à  un flot  en entrée (par exemple un fichier) et dont le résultat est écrit sur le flot de sortie.
+Le flot est ici traité ligne par ligne, de la première à  la dernière\footnote{La
+   spécification simplifiée dans ce TP diffère des commandes {\tt diff} et {\tt patch} de Unix, mais le principe est similaire.}.
+   Une ligne se termine par le caractère NEWLINE ({\tt {\textbackslash}n}).
+Chaque ligne a un numéro à  partir de 1 pour la première ligne; le début du fichier (avant la première ligne) correspond par convention à  une ligne virtuelle de numéro 0.
+
+Un patch est une suite d'instructions, chacune écrite sur une ou deux lignes.
+La première ligne d'une instruction de patch est composée d'un caractère définissant l'instruction ({\tt +}, {\tt =}, {\tt d}  ou {\tt D}),
+suivi d'un caractère espace puis d'un entier $k\geq 0$ indiquant le numéro de la ligne du flot d'entrée affectée par l'instruction.
+Cette première ligne de l'instruction peut être\,:
+\begin{description}
+\item[``{\tt +} $k${\tt {\textbackslash}n}''] {\em Ajout}\,: la ligne suivante dans le patch est ajoutée sur le flot de sortie après la ligne $k$ du flot d'entrée.
+Si $k=0$, la ligne est insérée avant la première ligne (numérotée 1) du flot d'entrée.
+% $C=${\tt 0x43} ({\em Copie}),
+\item[``{\tt =} $k${\tt {\textbackslash}n}''] {\em Substitution}\,: la ligne $k$ du flot d'entrée est remplacée sur le flot de sortie par la ligne suivante dans le patch.
+\item[``{\tt d} $k${\tt {\textbackslash}n}''] {\em Destruction}\,: la ligne $k$
+	du flot d'entrée n'est pas recopiée sur le flot de sortie.
+\item[``{\tt D} $k$ $m${\tt {\textbackslash}n}''] {\em Multi-destruction}\,: les $m$ lignes de la ligne $k$ à  la ligne $k+m-1$ du flot d'entrée ne sont pas recopiées sur le flot de sortie.
+\end{description}
+Le fonctionnement est le suivant\,:
+\begin{itemize}
+\item Toutes les lignes du flot d'entrée qui ne sont pas détruites et dont le numéro n'apparait pas dans une instruction de substitution sont recopiées
+sur le flot de sortie.
+\item Les numéros de lignes $k$ dans les instructions du patch apparaissent par ordre croissant.
+\item Les instructions sont exécutées dans l'ordre du début à  la fin; ainsi deux commandes d'ajout consécutives avec un même numéro de ligne entraînent
+l'ajout consécutif des deux lignes opérandes dans l'ordre  sur la sortie.
+\item Une instruction de substitution a un  numéro de ligne strictement supérieur à  l'instruction qui la précède.
+\item
+Toutes les instructions qui suivent une instruction de destruction "{\tt d $k$}" (resp. "{\tt D $k$ $m$}")
+ont un numéro de ligne supérieur ou égal à  $k+1$ (resp. $k+m$). De plus, une instruction de destruction ({\tt d} ou {\tt D})
+ne peut pas porter sur la même ligne qu'une instruction de substitution.
+%L'instruction "{\tt d $k$}" est équivalente à  "{\tt D $k$ 1}" mais a un  coût 10 au lieu de 15.
+\end{itemize}
+
+%%et  de coûts respectifs $\tau_I, \tau_S, \tau_D, \tau_C$.
+%la ligne commence par un $A$ suivi d'un entier $k \geq 0$\,: la ligne suivansuivi d'un octet {\tt c}\,: ajoute à  la position courante l'octet {\tt c}.
+%% le coût est $\tau_A=4$.
+%\item[Substitution] l'octet  $S$, suivi d'un octet  {\tt c}\,: remplace l'octet à  la position courante par {\tt c}.
+%% le coût est $\tau_S=2$.
+%\item[destruction] noté $D$ suivi d'un entier {\tt n} codé sur 64 bits (little Endian)\,:  supprime les $n$  octets  à  partir de la position courante;
+%%sinon l'instruction  de 10 octets $Dnm$ avec $n=${\tt{0xFF}} et  $m$ un entier (non signé) de  64 bits supprime les $m$ octets suivants à  partir de la position courante.
+%% Le coût est: si $n<255$, alors $\tau_D=1+n$; sinon $\tau_D=10 + (m \% 1024) + (m / 1024)$.
+%\item[Copie] notée $C$ suivi d'un entier {\tt n} codé sur 64 bits (little Endian)\,:  recopie les $n$  octets suivants à  partir de la position courante.
+%%suivi d'un octet {\tt n}\,: si $n \neq ${\tt 0xFF}, recopie les $n$  octets  à  partir de la position courante;
+%%sinon l'instruction  de 10 octets $Cnm$ avec $n=${\tt{0xFF}} et  $m$ un entier (non signé) de  64 bits recopie  les $m$ octets suivants à  partir de la position courante.
+%% Le coût est: si $n<255$, alors $\tau_C=1+n$; sinon $\tau_C=10 + (m \% 1024) + (m / 1024)$.
+%\end{description}
+%Toutes les lignes du flot d'entrée dont le numéro n'apparait pas dans une instruction de destruction ou de substitution sont recopiées
+%dans le flot de sortie.
+%% En appliquant un patch $P$ à  un fichier $A$ en entrée, on obtient un fichier $B$.
+%% \paragraph{applyPatch} \noindent
+La commande fournie  {\tt applyPatch }
+écrit sur la sortie standard le résultat de l'application du  patch  {\em patch\_file} au fichier en lecture {\em original\_file}\,: \\
+\centerline{ {\tt applyPatch } {\em patch\_file}   {\em  original\_file}  }
+
+
+	\paragraph{Coût d'un patch.}
+% Par définiion, c'est la taille du fichier patch ene nombre d'octets.
+Le coût d'une instruction de patch dont la première ligne commence par "{\tt +}" ou "{\tt =}" est 10+$s$,
+où $s$ est le nombre de caractères de la ligne qui suit dans le patch (en incluant {\tt {\textbackslash}n}).
+Le coût d'une instruction de destruction commençant  par "{\tt d}" (resp.  "{\tt D}") est 10 (resp. 15).
+Le coût d'un patch est la somme des coûts de ses instructions.\\
+% On définit deux fonctions de coût d'un patch\,:
+% \begin{itemize}
+%   \item {\em coût mémoire}\,: c'est la taille du patch en nombre d'octets;
+%   \item {\em coût d'édition}\,: c'est la somme des coûts de ses instructions en posant:  le coût de la copie d'un caractère ou de sa substitution par lui-même est nul;
+%   le coût de l'ajout d'un caractère ou d'une substitution par un autre est 1; le coût de la destruction d'un caractère est 1. Ainsi, le coût de $Cn$ est nul et le coût de
+%   $Dm$ est $m$. \\
+%   {\em{Remarque}\,: le coût d'édition est ici la {\em distance de Levehnstein} entre les deux flots en entrée et en sortie (la symétrie et l'inégalité triangulaire sont vérifiées).},
+% \end{itemize}
+
+\paragraph{Exemple.}
+Pour le  patch $P$ (listing 1) et le fichier $F$ (listing 2),
+la commande\,:
+$~~~${ {\tt applyPatch   P   F }}$~~~$
+écrit sur la sortie standard les lignes du listing 3.
+Le patch $P$ est de coût 67.
+
+\lstset{
+    basicstyle=\ttfamily,
+    linewidth=\textwidth,
+	xleftmargin=0.3\textwidth,
+	xrightmargin=0.3\textwidth
+    %frame=single,
+    %numbers=left
+    }
+	\begin{minipage}[b]{.27\linewidth}
+		\begin{lstlisting}
++ 0
+@#?!
++ 1
+u
+= 3
+v
+D 4 2
++ 6
+ww
+\end{lstlisting}
+\captionof{lstlisting}{Fichier {\tt P} de patch. }
+\end{minipage}
+\hfill
+\begin{minipage}[b]{.27\linewidth}
+	\begin{lstlisting}
+a b
+ccc
+d
+ee
+ff
+g
+\end{lstlisting}
+\captionof{lstlisting}{Fichier {\tt F} d'entrée.}
+\end{minipage}
+\hfill
+\begin{minipage}[b]{.35\linewidth}
+	\begin{lstlisting}
+@#?!
+a b
+u
+ccc
+v
+g
+ww
+\end{lstlisting}
+\captionof{lstlisting}{Sortie de {\tt applyPatch   P   F }}
+\end{minipage}
+
+
+%Soit  le patch $P$\,:
+%``{\tt{+ 0\textbackslash{n}}{@\#?!\textbackslash{n}}{+ 1\textbackslash{n}u\textbackslash{n}}{= 3\textbackslash{n}v\textbackslash{n}}{D 4 2\textbackslash{n}}{+ 5\textbackslash{n}ww\textbackslash{n}}}''; il est de coût 80. \\
+%Soit le fichier $F$\,:
+%``{\tt{a b\textbackslash{n}}{ccc\textbackslash{n}}{d\textbackslash{n}}{ee\textbackslash{n}}{ff\textbackslash{n}}{g\textbackslash{n}}}''.
+%$P=['C', 'C', 'C', 'A', 'n', 'A', 'e', 'C', 'A', 'a', 'C', 'S', 'n', 'A', 'é', 'C', ' D']$
+%La commande\,:
+%{ {\tt applyPatch   P   F }}  \\
+%écrit sur la sortie standard ``{\tt{@\#?!\textbackslash{n}}{a b\textbackslash{n}}{u\textbackslash{n}}{uv\textbackslash{n}}{ccc\textbackslash{n}}{v\textbackslash{n}}{g\textbackslash{n}}{ww\textbackslash{n}}}''.
+
+
+\paragraph{But du TP\,:}  écrire un programme {\tt computePatchOpt} qui prend en entrée deux fichiers $F_1$ et $F_2$ en lecture et qui écrit sur la sortie standard
+un patch $P$ de coût minimal tel que
+la commande  ``{\tt applyPatch  $P$ $F_1$}''  écrit en sortie un contenu
+identique à  $F_2$. Ce programme doit implémenter la méthode de programmation
+dynamique.
+
+\paragraph{Patch restreint} Un patch est dit {\em restreint} si il ne comporte
+pas d'instruction de multi-destruction (préfixée par {\tt D}).
+Le {\em problème du patch restreint} est de calculer un patch restreint de coût minimal. \\
+
+{\bf{Exemple.}}  Le patch {\tt R} (listing 5) est un patch restreint de coût 72 équivalent au patch
+{\tt P} (listing 4). \\
+\begin{minipage}[b]{.4\linewidth}
+		\begin{lstlisting}
++ 0
+@#?!
++ 1
+u
+= 3
+v
+D 4 2
++ 6
+ww
+\end{lstlisting}
+\captionof{lstlisting}{Fichier de patch {\tt P}.}
+\end{minipage}
+\hfill
+	\begin{minipage}[b]{.555555\linewidth}
+		\begin{lstlisting}
++ 0
+@#?!
++ 1
+u
+= 3
+v
+d 4
+d 5
++ 6
+ww
+\end{lstlisting}
+\captionof{lstlisting}{Fichier de patch restreint {\tt R}  équivalent.}
+\end{minipage}
+
+
+%``{\tt{+ 0\textbackslash{n}}{@\#?!\textbackslash{n}}{+ 1\textbackslash{n}u\textbackslash{n}}{= 3\textbackslash{n}v\textbackslash{n}}{d 4\textbackslash{n}}{d 5\textbackslash{n}}{+ 6\textbackslash{n}ww\textbackslash{n}}}'' est un patch restreint de coût 85 équivalent au patch $P$.
+
+
+% \paragraph{Problème restreint.}
+% % On considère le problème restreint dans lequel les seules instructions de copie et destruction autorisées dans le patch sont limitées à  1 caractère unique.
+% Un {\em patch restreint}  contient seulement les  instructions d'édition\,: $C1$,  $D1$, $Ac$ ou $Sc$ (pour tout caractère $c$);
+% les instructions $Dn$ et $Cn$ ne sont donc autorisées que si $n=1$..
+% Le {\em  problème restreint}  est de calculer un patch restreint de taille  minimale.  \\
+%Exemple A CORRIGER: {\tt C1C1C1AnAeC1AaSnSnAéC1D} est un patch restreint de taille  23 octets.
+
+\paragraph{Remarque sur l'implémentation}
+\begin{itemize}
+\item Le choix du langage de programmation pour la programmation dynamique est laissé libre;  il sera précisé (et éventuellement argumenté) dans le rapport.
+\item Le choix du solveur de PL  ou PLNE est laissé libre (par exemple GLPK ou PYOMO ou ...) ;  il sera précisé (et éventuellement argumenté) dans le rapport.
+\end{itemize}
+
+\paragraph{ Questions et barème sur 20 points:}
+\begin{enumerate}
+  \item[1 point]  Modéliser le problème restreint sous forme de PLNE. Rendu sous teide avant vendredi 2/10  20h (après la séance 3)\,; correction séance 4. \\
+{\bf Bonus}\,: on pourra écrire (mais ce n'est pas obligatoire) un programme {\tt computePatchOpt-plne} utilisant un solveur de PLNE (voir rendu final).
+% \,: bonus de 0.5 point incluant la comparaison à  la programmation dynamique.
+
+ \item[1 point]  Modéliser  le problème général  par équation de Bellman. Rendu sous teide avant vendredi 6/11  20h (après la séance 7)\,; correction séance 8.
+
+ \item[3 points] Résolution par programmation dynamique\,: écrire un programme exécutable {\tt computePatchOpt} qui résout le problème général par
+        programmation dynamique.
+       Le programme est noté sur 2 points (clarté et efficiacité); sa documentation sur 1 point.
+ \item[8 points]  Le rendu final doit être déposé sous teide avant le 27/11/2015; ce
+rendu {\tt TPAOD.tgz} est l'archive\footnote{cette archive peut être générée par la commande Unix\,: {\tt tar cvfz TPAOD.tgz TPAOD} }
+d'un répertoire {\tt TPAOD} (cf contenu en fin d'énoncé) incluant notamment un
+{\tt Makefile}, les sources pour construire l'exécutable {\tt bin/computePatchOpt} et sa  documentation {\tt doc/index.html} ainsi qu'un
+rapport
+de 4 pages maximum
+{\tt rapport/rapport.pdf}. Ce rapport doit suivre le modèle fourni; il décrit
+les choix d'implémentation et répond dans l'ordre  aux questions suivantes\,:
+      \begin{enumerate}[label=\arabic*.]
+        \item (1 point)  explication brève du principe de votre programme en  précisant la méthode implantée (récursive, itérative);
+        \item (3 points) analyse du coût théorique de votre programme en fonction des  nombres $n_1$ et $n_2$ de lignes et $c_1$ et $c_2$ de caractères
+des deux fichiers $F_1$ et $F_2$ en entrée\,:
+           \begin{itemize}
+              \item nombre  d'opérations en pire cas\,;
+              \item place mémoire requise\,;
+              \item analyse des défauts de localité sur le modèle CO (argumenter en s'appuyant sur le programme);
+           \end{itemize}
+        \item (2 points) compte rendu d'expérimentation\,:
+               \begin{enumerate}
+                    \item la description synthétique de la machine et des conditions dans lesquelles les mesures ont été effectuées (pour permettre la reproductibilité des mesures);
+                    \item un tableau donnant les temps d'exécution mesurés pour chaque benchmark indiqué (temps minimum, maximum et moyen sur 5 exécutions);
+                    \item une réponse justifiée  à  la question\,: les  temps mesurés correspondent ils  à  votre analyse théorique (nombre dâ€™opérations et défauts de cache) ?
+               \end{enumerate}
+        \item (1 point)
+        Quelle méthode utiliseriez vous pour résoudre le problème si le coût d'un patch était défini comme
+sa taille en nombre d'octets  (i.e. taille du fichier patch) ?
+\\
+        On ne demande pas de  programme  ni d'algorithme, mais juste de préciser
+        le principe de la résolution choisie (parmi celles vues en cours); on précisera soit les équations de base pour la résolution,
+        soit les modifications à  apporter à  votre  programme si il peut être adapté à  cette fonction de coût.
+        \item (1 point) pour la qualité globale du rapport (présentation, concision et clarté de l'argumentation).
+      \end{enumerate}
+%Barême : 3 points pour la qualité globale de ce rapport final et la pertinence des commentaires.
+
+ \item[7 points] Évaluation automatique\,: un programme automatique testera la correction des programmes. Tous les tests échoués recevront automatiquement la note 0
+(par exemple si le nom ou la spécification du programme ne sont pas respectés, ou si le patch généré est invalide ou pas de coût minimal, etc).
+\\
+NB La moitié de ces tests (3.5 points) admettent un patch restreint comme solution optimale.
+\item[Bonus 1 point]  Écriture d'un programme exécutable {\tt computePatchOpt-plne} qui résout le problème restreint et
+comparaison du résultat obtenu et des performances expérimentales avec la résolution par programmation dynamique\,:
+cette comparaison doit alors figurer dans le rapport, en dernière question traitée.
+\end{enumerate}
+
+\paragraph{Contenu du répertoire TPAOD\,: règles à  respecter strictement pour l'évaluation automatique.}
+Votre dépôt final teide doit être une archive {\tt TPAOD.tgz} qui suit le modèle de l'archive squelette fournie.
+À la racine de ce répertoire doivent figurer\,:
+\begin{itemize}
+  \item un fichier {\tt Makefile} standard qui sera exécuté par le programme d'évaluation en premier via la commande \\
+    \centerline{\tt cd TPAOD; make -f Makefile} \\
+    et qui peut donc être utilisé pour  générer les exécutables, la documentation  et le rapport demandés;
+  \item un répertoire {\tt src} contenant l'ensemble des sources développées;
+  \item un répertoire {\tt bin} contenant le fichier exécutable {\tt computePatchOpt};  et, si vous l'avez réalisé, le programme {\tt computePatchOpt-plne};
+        vous pouvez mettre d'autres fichiers, mais ils ne seront pas appelés directement par le programme d'évaluation automatique.
+L'exécutable {\tt computePatchOpt}
+respecte   la spécification suivante\,: \\
+\centerline{ {\tt computePatchOpt   F1   F2 }}  \\
+écrit sur la sortie standard un patch de coût minimal transformant via {\tt applyPatch} le fichier {\tt F1} en {\tt F2}.
+\\
+Le programme optionnel  {\tt computePatchOpt-plne} a la même spécification mais génère un patch restreint de coût minimal\,;
+
+  \item un répertoire {\tt rapport} qui  contient un fichier {\tt rapport.pdf} qui doit respecter les mêmes paragraphes que le modèle {\tt rapport-modele.pdf} fourni(format exigé, 4 pages maximum).
+  Il est recommandé d'utiliser \LaTeX en suivant le fichier {\tt rapport-modele.tex} fourni;
+  mais vous pouvez utiliser un autre logiciel de traitement de texte à 
+  condition de respecter  le squelette (pdf) de {\tt rapport-modele.pdf};
+  % Ce répertoire contient aussi l'ensemble des sources et images compilables pour le rapport (par exemple avec pdflatex si
+  % {\tt rapport.pdf} est généré par le Makefile). \\
+\item un répertoire {\tt doc} avec en particulier un fichier html {\tt index.html} contenant la documentation des programmes développés
+(ce fichier peut être généré par exemple avec doxygen).
+\end{itemize}
+Le programme d'évaluation automatique (qui sera lancé depuis un répertoire plus haut dans la hiérarchie)
+exécute d'abord la commande\,: {\tt  cd TPAOD ; make ; cd .. }  \\
+Après exécution de cette commande, les fichiers {\tt TPAOD/bin/computePatchOpt}, {\tt TPAOD/rapport/rapport.pdf} et {\tt TPAOD/doc/index.html} doivent exister.
+Le programme d'évaluation lance ensuite une séquence de commandes de la forme \\
+\centerline{\tt TPAOD/bin/computePatchOpt F1 F2 \textgreater\,  patchF1F2 ; verifPatch F1 F2 patchF1F2 } \\
+où la commande (non fournie) {\tt verifPatch} vérifie la validité\footnote{En particulier il vérifie
+    qu'après la commande \,: $~~$ {\tt applyPatch patchF1F2 F1 > F2patched ; diff F2 F2patched > erreurs} \\
+    le fichier {\tt erreurs} est vide.}
+et l'optimaité en coût du patch {\tt patchF1F2}.
