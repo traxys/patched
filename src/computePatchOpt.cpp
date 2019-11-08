@@ -144,16 +144,21 @@ struct Path {
 	 * \brief Where did the patch stopped
 	 */
 	LinePair end_point;
+	/**
+	 * \brief The previous point in the path
+	 */
+	LinePair prev_point;
 
 	/**
 	 * \brief Create a new path from starting situations
 	 */
-	Path(int64_t initial_cost, LinePair start_point);
+	Path(int64_t initial_cost, LinePair start_point, LinePair point_before);
 };
-Path::Path(int64_t initial_cost, LinePair start_point)
+Path::Path(int64_t initial_cost, LinePair start_point, LinePair point_before)
 {
 	this->total_cost = initial_cost;
 	this->end_point = start_point;
+	this->prev_point = point_before;
 }
 /**
  * \brief Is a Path cheaper than the other
@@ -232,7 +237,7 @@ Searcher::Searcher(Lines *input, Lines *output)
 	for (int i = -1; i < this->a->line_count(); ++i) {
 		LinePair p = { i, -1 };
 		int64_t cost = 10 * (i + 1);
-		auto pth = Path(cost, p);
+		auto pth = Path(cost, p, {-2, -2});
 		this->costs.insert({ p, { cost, { -1, -1 } } });
 		this->paths.push_back(pth);
 	}
@@ -240,7 +245,7 @@ Searcher::Searcher(Lines *input, Lines *output)
 	for (int j = 0; j < this->b->line_count(); ++j) {
 		sum += this->b->length(j) + 10;
 		LinePair p = { -1, j };
-		auto pth = Path(sum, p);
+		auto pth = Path(sum, p, {-2, -2});
 		this->costs.insert({ p, { sum, { -1, -1 } } });
 		this->paths.push_back(pth);
 	}
@@ -256,67 +261,66 @@ bool Searcher::advance_min_path()
 	std::pop_heap(this->paths.begin(), this->paths.end(), is_cheaper);
 	Path min_path = this->paths.back();
 	this->paths.pop_back();
+	// std::cout << "PATH LEN " << this->paths.size() << std::endl;
+	// If there is no such cost, we should insert it because we are the first here
+	// Else it means somebody was shorter than us, just be deleted
+	if(
+			this->costs.count(min_path.end_point) == 0 ||
+			min_path.end_point.first == -1 ||
+			min_path.end_point.second == -1
+	  ) {
+		this->costs.insert({ min_path.end_point,
+				{ min_path.total_cost, min_path.prev_point } });
 
-	auto i = min_path.end_point.first;
-	auto j = min_path.end_point.second;
-	/*std::cout 	<< "[MIN_PATH] i: " << i 
-	  << " | j: " << j
-	  << std::endl;*/
-	if (i == this->a->line_count() - 1 && j == this->b->line_count() - 1) {
-		// We have a min path that is at the end, we finished
-		return true;
-	}
-	bool need_remake_heap = false;
-	// We can read check for one more line of A, more remain, if we are not at a border
-	if (j != -1 && i < this->a->line_count() - 1) {
-		auto incr_i_cost = 10;
-		LinePair next_point = { i + 1, j };
-		this->min_path_to(min_path, incr_i_cost, next_point);
-	}
-	if (i != -1 && j < this->b->line_count() - 1) {
-		auto incr_j_cost = 10 + this->b->length(j + 1);
-		LinePair next_point = { i, j + 1 };
-		this->min_path_to(min_path, incr_j_cost, next_point);
-	}
-	if (j < this->b->line_count() - 1 && i < this->a->line_count() - 1) {
-		int64_t incr_ij_cost;
-		if (this->a->get(i + 1) ==
-				this->b->get(
-					j +
-					1)) { // We should hopefully only check once per segment, so it should be good
-			incr_ij_cost = 0;
-		} else {
-			incr_ij_cost = 10 + this->b->length(j + 1);
+		auto i = min_path.end_point.first;
+		auto j = min_path.end_point.second;
+		/*std::cout 	<< "[MIN_PATH] i: " << i 
+			<< " | j: " << j
+			<< std::endl;*/
+		if (i == this->a->line_count() - 1 && j == this->b->line_count() - 1) {
+			// We have a min path that is at the end, we finished
+			return true;
 		}
-		LinePair next_point = { i + 1, j + 1 };
-		this->min_path_to(min_path, incr_ij_cost, next_point);
-	}
-	if (need_remake_heap) {
-		std::make_heap(this->paths.begin(), this->paths.end(),
-				is_cheaper);
+		bool need_remake_heap = false;
+		// We can read check for one more line of A, more remain, if we are not at a border
+		if (j != -1 && i < this->a->line_count() - 1) {
+			auto incr_i_cost = 10;
+			LinePair next_point = { i + 1, j };
+			this->min_path_to(min_path, incr_i_cost, next_point);
+		}
+		if (i != -1 && j < this->b->line_count() - 1) {
+			auto incr_j_cost = 10 + this->b->length(j + 1);
+			LinePair next_point = { i, j + 1 };
+			this->min_path_to(min_path, incr_j_cost, next_point);
+		}
+		if (j < this->b->line_count() - 1 && i < this->a->line_count() - 1) {
+			int64_t incr_ij_cost;
+			if (this->a->get(i + 1) ==
+					this->b->get(
+						j +
+						1)) { // We should hopefully only check once per segment, so it should be good
+				incr_ij_cost = 0;
+			} else {
+				incr_ij_cost = 10 + this->b->length(j + 1);
+			}
+			LinePair next_point = { i + 1, j + 1 };
+			this->min_path_to(min_path, incr_ij_cost, next_point);
+		}
+		if (need_remake_heap) {
+			std::make_heap(this->paths.begin(), this->paths.end(),
+					is_cheaper);
+		}
 	}
 	return false;
 }
 void Searcher::min_path_to(Path &min_path, int64_t incr_cost,
 		LinePair next_point)
 {
-	// If we are on a path that was already discovered there is a shorter
-	// path to go to that point, so we can delete don't have to add ourselves
-	if (this->costs.count(next_point) == 0) {
-		auto new_path =
-			Path(min_path.total_cost + incr_cost, next_point);
-		// We are at a new point we can update ourselves
-		auto prev_point = min_path.end_point;
-		/*std::cout 	<< "[COST] i: " << next_point.first 
-		  << " | j: " << next_point.second 
-		  << " costed at:" << new_path->total_cost 
-		  << std::endl;*/
-		this->costs.insert({ new_path.end_point,
-				{ new_path.total_cost, prev_point } });
-		this->paths.push_back(new_path);
-		std::push_heap(this->paths.begin(), this->paths.end(),
-				is_cheaper);
-	}
+	auto new_path =
+		Path(min_path.total_cost + incr_cost, next_point, min_path.end_point);
+	this->paths.push_back(new_path);
+	std::push_heap(this->paths.begin(), this->paths.end(),
+			is_cheaper);
 }
 std::vector<LinePair> Searcher::optimal_path()
 {
@@ -442,9 +446,9 @@ int main(int argc, char *argv[])
 	searcher.search();
 	auto optimal_path = searcher.optimal_path();
 	/*for (auto &p : optimal_path) {
-		std::cout << "i: " << p.first << " | j: " << p.second
-			<< std::endl;
-	}*/
+	  std::cout << "i: " << p.first << " | j: " << p.second
+	  << std::endl;
+	  }*/
 	std::cout << "Valued at " << searcher.optimal_cost() << std::endl;
 	create_patch(optimal_path, argv[3], &input_file, &output_file);
 
