@@ -52,12 +52,19 @@ fn main() {
             println!("    - Benchmark: {}", name);
             let mut command = Command::new(&config.command);
             let start = Instant::now();
-            command
-                .arg(&benchmark.source)
-                .arg(&benchmark.target)
-                .arg("/dev/null")
-                .output()
-                .expect("invalid command");
+            println!(
+                "Output: {}",
+                String::from_utf8(
+                    command
+                        .arg(&benchmark.source)
+                        .arg(&benchmark.target)
+                        .arg("/dev/null")
+                        .output()
+                        .expect("invalid command")
+                        .stdout
+                )
+                .expect("Invalid utf8")
+            );
             benchs.push(format!(
                 "{}",
                 Instant::now().duration_since(start).as_secs_f64()
