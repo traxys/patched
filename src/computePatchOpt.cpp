@@ -275,13 +275,12 @@ bool Searcher::advance_min_path()
 		auto i = min_path.end_point.first;
 		auto j = min_path.end_point.second;
 		/*std::cout 	<< "[MIN_PATH] i: " << i 
-			<< " | j: " << j
-			<< std::endl;*/
+		  << " | j: " << j
+		  << std::endl;*/
 		if (i == this->a->line_count() - 1 && j == this->b->line_count() - 1) {
 			// We have a min path that is at the end, we finished
 			return true;
 		}
-		bool need_remake_heap = false;
 		// We can read check for one more line of A, more remain, if we are not at a border
 		if (j != -1 && i < this->a->line_count() - 1) {
 			auto incr_i_cost = 10;
@@ -306,21 +305,20 @@ bool Searcher::advance_min_path()
 			LinePair next_point = { i + 1, j + 1 };
 			this->min_path_to(min_path, incr_ij_cost, next_point);
 		}
-		if (need_remake_heap) {
-			std::make_heap(this->paths.begin(), this->paths.end(),
-					is_cheaper);
-		}
 	}
 	return false;
 }
 void Searcher::min_path_to(Path &min_path, int64_t incr_cost,
 		LinePair next_point)
 {
-	auto new_path =
-		Path(min_path.total_cost + incr_cost, next_point, min_path.end_point);
-	this->paths.push_back(new_path);
-	std::push_heap(this->paths.begin(), this->paths.end(),
-			is_cheaper);
+	// If there is already a path to there it was cheaper, and we don't have to try
+	if(this->costs.count(next_point) == 0){
+		auto new_path =
+			Path(min_path.total_cost + incr_cost, next_point, min_path.end_point);
+		this->paths.push_back(new_path);
+		std::push_heap(this->paths.begin(), this->paths.end(),
+				is_cheaper);
+	}
 }
 std::vector<LinePair> Searcher::optimal_path()
 {
