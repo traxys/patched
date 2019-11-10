@@ -21,6 +21,8 @@
    \RequirePackage{tikz}   % Pour faire des schémas
    \RequirePackage{graphicx} % Pour inclure des images
    \RequirePackage{listings} % pour mettre des listings
+   \usetikzlibrary{shapes.geometric,positioning}
+    
 % Fin Préambule; package qui peuvent être utiles
 
 \title{Rapport de TP 4MMAOD : Patch optimal entre deux fichiers}
@@ -33,7 +35,56 @@
 \maketitle
 
 \section{Graphe de dépendances (1 point)}
-{\em Dessinez le graphe de dépendances des appels.}
+\begin{center}
+\begin{tikzpicture}
+    \begin{scope}
+		\node[ellipse, draw](0) at (0,0) {$f(0,0)$};
+		\node[ellipse, draw](1) at (0,-1.5) {$f(1,0)$};
+		\node[ellipse, draw](2) at (0,-3) {$f(2,0)$};
+
+		\node[ellipse, draw](3) at (3,0) {$f(0,1)$};
+		\node[ellipse, draw](4) at (3,-1.5) {$f(1,1)$};
+		\node[ellipse, draw](5) at (3,-3) {$f(2,1)$};
+
+		\node[ellipse, draw](6) at (6,0) {$f(0,2)$};
+		\node[ellipse, draw](7) at (6,-1.5) {$f(1,2)$};
+		\node[ellipse, draw](8) at (6,-3) {$f(2,2)$};
+
+		\draw[-latex] (8) -- (5);
+		\draw[-latex] (5) -- (2);
+
+		\draw[-latex] (7) -- (4);
+		\draw[-latex] (4) -- (1);
+
+		\draw[-latex] (6) -- (3);
+		\draw[-latex] (3) -- (0);
+
+		\draw[-latex] (1) -- (0);
+		\draw[-latex] (2) -- (1);
+
+		\draw[-latex] (5) -- (4);
+		\draw[-latex] (4) -- (3);
+
+		\draw[-latex] (8) -- (7);
+		\draw[-latex] (7) -- (6);
+
+		\draw[-latex] (4) -- (0);
+		\draw[-latex] (8) -- (4);
+		\draw[-latex] (5) -- (1);
+		\draw[-latex] (7) -- (3);
+
+		\node at (0, -4) {\vdots};
+		\node at (3, -4) {\vdots};
+		\node at (6, -4) {\vdots};
+
+		\node at (8, 0) {\ldots};
+		\node at (8, -1.5) {\ldots};
+		\node at (8, -3) {\ldots};
+
+		\node at (8, -4) {$\ddots$};
+	\end{scope}
+\end{tikzpicture}
+\end{center}
 
 {L'algorithme est alors de trouver le plus court chemin depuis un point $(i,j) tq i=0 et/ou j=0$. Cela donne donc en fonction du chemin le patch optimal}
 
